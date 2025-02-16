@@ -6,58 +6,55 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText editTextClassName, editTextQuantity;
-    private RecyclerView recyclerViewItems; // استخدم RecyclerView
-    private ArrayList<String> itemsList;
-    private ItemAdapter adapter; // Adapter الخاص بـ RecyclerView
-    private DatabaseHelper dbHelper;
     private Button buttonSave, buttonClearAll, buttonUpdate;
+    private ListView listViewItems;
+    private ArrayList<String> itemsList;
+    private ArrayAdapter<String> adapter;
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize Views
+        // تهيئة العناصر
         editTextClassName = findViewById(R.id.editTextClassName);
         editTextQuantity = findViewById(R.id.editTextQuantity);
         buttonSave = findViewById(R.id.buttonSave);
         buttonClearAll = findViewById(R.id.buttonClearAll);
         buttonUpdate = findViewById(R.id.buttonUpdate);
-        recyclerViewItems = findViewById(R.id.recyclerViewItems); // RecyclerView
+        listViewItems = findViewById(R.id.listViewItems);
 
-        // Initialize List and Adapter
+        // تهيئة القائمة و Adapter
         itemsList = new ArrayList<>();
-        adapter = new ItemAdapter(this, itemsList);
-        recyclerViewItems.setLayoutManager(new LinearLayoutManager(this)); // ضبط الاتجاه العمودي
-        recyclerViewItems.setAdapter(adapter); // ربط adapter بالـ RecyclerView
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, itemsList);
+        listViewItems.setAdapter(adapter);
 
-        // Initialize Database Helper
+        // تهيئة قاعدة البيانات
         dbHelper = new DatabaseHelper(this);
 
-        // Load saved data from database
-        loadItemsFromDatabase(); // هذا الكود يحمل البيانات المخزنة
+        // تحميل البيانات عند بدء التشغيل
+        loadItemsFromDatabase();
 
         // Save Button Listener
         buttonSave.setOnClickListener(v -> saveItemToDatabase());
 
         // Update Button Listener
         buttonUpdate.setOnClickListener(v -> {
-            int selectedItemPosition = adapter.getSelectedItemPosition(); // الحصول على الموقع المحدد
+            int selectedItemPosition = listViewItems.getCheckedItemPosition();
 
-            if (selectedItemPosition != -1) { // تأكد من اختيار العنصر
+            if (selectedItemPosition != ListView.INVALID_POSITION) { // تأكد من اختيار العنصر
                 String selectedItem = itemsList.get(selectedItemPosition);
                 String[] parts = selectedItem.split(" - ");
 
@@ -66,13 +63,13 @@ public class MainActivity extends AppCompatActivity {
                     String currentClassName = parts[1];
                     int currentQuantity = Integer.parseInt(parts[2]);
 
-                    // إنشاء حوار تعديل
+                    // إنشاء حوار التعديل
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                     View dialogView = getLayoutInflater().inflate(R.layout.update_dialog, null);
 
                     EditText editClassName = dialogView.findViewById(R.id.editTextUpdateClassName);
                     EditText editQuantity = dialogView.findViewById(R.id.editTextUpdateQuantity);
-                    Button btnUpdate = dialogView.findViewById(R.id.buttonUpdate);
+                    Button btnUpdateDialog = dialogView.findViewById(R.id.buttonUpdateDialog);
 
                     // تعيين القيم الحالية
                     editClassName.setText(currentClassName);
@@ -81,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
                     builder.setView(dialogView);
                     AlertDialog dialog = builder.create();
 
-                    btnUpdate.setOnClickListener(innerV -> {
+                    btnUpdateDialog.setOnClickListener(innerV -> {
                         String newClassName = editClassName.getText().toString().trim();
                         String newQuantityStr = editQuantity.getText().toString().trim();
 
@@ -103,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "خطأ في البيانات المخزنة", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                Toast.makeText(this, "اختر عنصرًا لتعدíله", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "اختر عنصرًا لتعديله", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -115,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
                     .setPositiveButton("نعم", (dialog, which) -> {
                         dbHelper.clearAllItems();
                         itemsList.clear();
-                        adapter.notifyDataSetChanged();
+                        adapter.notifyDataSetChanged(); // تحديث ListView
                         Toast.makeText(MainActivity.this, "تم مسح جميع الصنوف", Toast.LENGTH_SHORT).show();
                     })
                     .setNegativeButton("لا", null)
@@ -124,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Method to Save Item to Database
+     * دالة لحفظ العنصر في قاعدة البيانات
      */
     private void saveItemToDatabase() {
         String className = editTextClassName.getText().toString().trim();
@@ -137,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (isInserted) {
                     Toast.makeText(this, "تم الحفظ بنجاح", Toast.LENGTH_SHORT).show();
-                    loadItemsFromDatabase(); // Reload data after insertion
+                    loadItemsFromDatabase(); // إعادة تحميل البيانات
                 } else {
                     Toast.makeText(this, "فشل الحفظ", Toast.LENGTH_SHORT).show();
                 }
@@ -148,13 +145,13 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "يرجى إدخال جميع البيانات", Toast.LENGTH_SHORT).show();
         }
 
-        // Clear input fields
+        // مسح الحقول بعد الحفظ
         editTextClassName.setText("");
         editTextQuantity.setText("");
     }
 
     /**
-     * Method to Load Items from Database
+     * دالة لتحميل العناصر من قاعدة البيانات
      */
     private void loadItemsFromDatabase() {
         Cursor cursor = dbHelper.getAllItems();
@@ -174,14 +171,14 @@ public class MainActivity extends AppCompatActivity {
                 }
             } while (cursor.moveToNext());
 
-            cursor.close(); // دائمًا إغلاق المؤشر بعد الاستخدام
+            cursor.close(); // إغلاق المؤشر بعد الاستخدام
         }
 
-        adapter.notifyDataSetChanged(); // تحديث RecyclerView
+        adapter.notifyDataSetChanged(); // تحديث ListView
     }
 
     /**
-     * Method to Update an Item in the Database
+     * دالة لتحديث العنصر في قاعدة البيانات
      */
     private void updateItem(String className, String quantity, int id) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -190,9 +187,9 @@ public class MainActivity extends AppCompatActivity {
         values.put(DatabaseHelper.COLUMN_QUANTITY, Integer.parseInt(quantity));
 
         long result = db.update(DatabaseHelper.TABLE_ITEMS, values, DatabaseHelper.COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
-        if (result != -1) {
+        if (result != 0) {
             Toast.makeText(this, "تم التعديل بنجاح", Toast.LENGTH_SHORT).show();
-            loadItemsFromDatabase(); // Reload data after update
+            loadItemsFromDatabase(); // إعادة تحميل البيانات
         } else {
             Toast.makeText(this, "فشل التعديل", Toast.LENGTH_SHORT).show();
         }

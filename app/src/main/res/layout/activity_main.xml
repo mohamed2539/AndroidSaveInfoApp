@@ -61,6 +61,7 @@
 
     <!-- Update and Clear All Buttons -->
     <LinearLayout
+        android:id="@+id/linearLayoutButtons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -77,7 +78,11 @@
             android:layout_weight="1"
             android:text="تعديل"
             app:cornerRadius="8dp"
-            android:layout_marginEnd="8dp" />
+            android:layout_marginEnd="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/buttonClearAll"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
         <!-- Clear All Button -->
         <com.google.android.material.button.MaterialButton
@@ -87,15 +92,19 @@
             android:layout_weight="1"
             android:text="مسح الكل"
             app:cornerRadius="8dp"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@id/buttonUpdate"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
     </LinearLayout>
 
-    <!-- Items List (RecyclerView) -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewItems"
+    <!-- Items List (ListView) -->
+    <ListView
+        android:id="@+id/listViewItems"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/buttonUpdate"
+        app:layout_constraintTop_toBottomOf="@id/linearLayoutButtons"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

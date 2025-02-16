@@ -40,10 +40,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     /**
      * Method to Insert an Item into the Database
-     *
-     * @param className Name of the class/item
-     * @param quantity  Quantity of the item
-     * @return true if insertion was successful, false otherwise
      */
     public boolean insertItem(String className, String quantity) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -61,8 +57,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     /**
      * Method to Get All Items from the Database
-     *
-     * @return Cursor containing all items
      */
     public Cursor getAllItems() {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -77,22 +71,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         );
     }
 
-
-
-
+    /**
+     * Method to Delete an Item from the Database
+     */
     public boolean deleteItem(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
         int result = db.delete(TABLE_ITEMS, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
         return result > 0; // Return true if deletion was successful
     }
 
+    /**
+     * Method to Clear All Items from the Database
+     */
     public void clearAllItems() {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_ITEMS, null, null); // Delete all rows
     }
-
-
-
-
-
 }

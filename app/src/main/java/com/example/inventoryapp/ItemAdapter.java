@@ -7,14 +7,13 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import java.util.List;
 
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder> {
 
     private List<String> itemsList;
     private Context context;
-    private int selectedPosition = -1; // متغير لموقع العنصر المحدد
+    private int selectedPosition = -1; // موقع العنصر المختار
 
     public ItemAdapter(Context context, List<String> itemsList) {
         this.context = context;
@@ -33,7 +32,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         String item = itemsList.get(position);
         String[] parts = item.split(" - ");
 
-        if (parts.length >= 3) { // تأكد من وجود القيم الثلاث
+        if (parts.length >= 3) { // تأكد من وجود ID واسم الصنف والعدد
             holder.className.setText(parts[1]); // اسم الصنف
             holder.quantity.setText(parts[2]); // العدد
         }
@@ -43,7 +42,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
         // عند النقر على العنصر
         holder.itemView.setOnClickListener(v -> {
-            selectedPosition = position; // تحديث الموقع المحدد
+            selectedPosition = position; // تحديث الموقع المختار
             notifyDataSetChanged(); // تحديث القائمة
         });
     }
@@ -53,7 +52,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         return itemsList.size(); // عدد العناصر في القائمة
     }
 
-    // الحصول على موقع العنصر المحدد
+    // الحصول على موقع العنصر المختار
     public int getSelectedItemPosition() {
         return selectedPosition;
     }
