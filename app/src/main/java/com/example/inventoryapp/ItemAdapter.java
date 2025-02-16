@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -15,8 +14,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
     private List<String> itemsList;
     private Context context;
+    private int selectedPosition = -1; // متغير لموقع العنصر المحدد
 
-    // Constructor
     public ItemAdapter(Context context, List<String> itemsList) {
         this.context = context;
         this.itemsList = itemsList;
@@ -33,10 +32,20 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
         String item = itemsList.get(position);
         String[] parts = item.split(" - ");
-        if (parts.length >= 3) { // تأكد من وجود القيم المطلوبة
+
+        if (parts.length >= 3) { // تأكد من وجود القيم الثلاث
             holder.className.setText(parts[1]); // اسم الصنف
             holder.quantity.setText(parts[2]); // العدد
         }
+
+        // تحديد العنصر المختار
+        holder.itemView.setActivated(position == selectedPosition);
+
+        // عند النقر على العنصر
+        holder.itemView.setOnClickListener(v -> {
+            selectedPosition = position; // تحديث الموقع المحدد
+            notifyDataSetChanged(); // تحديث القائمة
+        });
     }
 
     @Override
@@ -44,7 +53,11 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         return itemsList.size(); // عدد العناصر في القائمة
     }
 
-    // ViewHolder Class
+    // الحصول على موقع العنصر المحدد
+    public int getSelectedItemPosition() {
+        return selectedPosition;
+    }
+
     static class ItemViewHolder extends RecyclerView.ViewHolder {
         TextView className, quantity;
 

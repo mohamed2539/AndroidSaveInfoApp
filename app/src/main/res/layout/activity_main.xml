@@ -56,7 +56,6 @@
                 android:text="حفظ"
                 app:cornerRadius="8dp"
                 android:layout_marginTop="16dp" />
-
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -91,7 +90,7 @@
             android:layout_marginStart="8dp" />
     </LinearLayout>
 
-    <!-- Items List -->
+    <!-- Items List (RecyclerView) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewItems"
         android:layout_width="0dp"

@@ -6,72 +6,63 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-//import androidx.databinding.DataBindingUtil; // إذا كنت تستخدم Data Binding
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.Toast;
-
-import com.example.inventoryapp.databinding.ActivityMainBinding; // إذا كنت تستخدم Data Binding
-import com.example.inventoryapp.DatabaseHelper;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText editTextClassName, editTextQuantity;
-    private Button buttonSave, buttonClearAll, buttonUpdate;
-    private ListView listViewItems;
+    private RecyclerView recyclerViewItems; // استخدم RecyclerView
     private ArrayList<String> itemsList;
-    private ArrayAdapter<String> adapter;
+    private ItemAdapter adapter; // Adapter الخاص بـ RecyclerView
     private DatabaseHelper dbHelper;
+    private Button buttonSave, buttonClearAll, buttonUpdate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main); // إذا كنت تستخدم findViewById
+        setContentView(R.layout.activity_main);
 
-// Initialize Views
+        // Initialize Views
         editTextClassName = findViewById(R.id.editTextClassName);
         editTextQuantity = findViewById(R.id.editTextQuantity);
         buttonSave = findViewById(R.id.buttonSave);
         buttonClearAll = findViewById(R.id.buttonClearAll);
         buttonUpdate = findViewById(R.id.buttonUpdate);
+        recyclerViewItems = findViewById(R.id.recyclerViewItems); // RecyclerView
 
-        // Initialize List
+        // Initialize List and Adapter
         itemsList = new ArrayList<>();
-
-        // Initialize RecyclerView
-        RecyclerView recyclerViewItems = findViewById(R.id.recyclerViewItems);
-        recyclerViewItems.setLayoutManager(new LinearLayoutManager(this)); // ضبط الاتجاه إلى عمودي
-        ItemAdapter adapter = new ItemAdapter(this, itemsList); // إنشاء adapter
-        recyclerViewItems.setAdapter(adapter); // ربط adapter بالقائمة
+        adapter = new ItemAdapter(this, itemsList);
+        recyclerViewItems.setLayoutManager(new LinearLayoutManager(this)); // ضبط الاتجاه العمودي
+        recyclerViewItems.setAdapter(adapter); // ربط adapter بالـ RecyclerView
 
         // Initialize Database Helper
         dbHelper = new DatabaseHelper(this);
 
         // Load saved data from database
-        loadItemsFromDatabase();
+        loadItemsFromDatabase(); // هذا الكود يحمل البيانات المخزنة
 
         // Save Button Listener
         buttonSave.setOnClickListener(v -> saveItemToDatabase());
 
         // Update Button Listener
         buttonUpdate.setOnClickListener(v -> {
-            if (listViewItems.getCheckedItemPosition() != ListView.INVALID_POSITION) {
-                int position = listViewItems.getCheckedItemPosition();
-                String selectedItem = itemsList.get(position);
+            int selectedItemPosition = adapter.getSelectedItemPosition(); // الحصول على الموقع المحدد
 
-                // استخراج ID من السجل
+            if (selectedItemPosition != -1) { // تأكد من اختيار العنصر
+                String selectedItem = itemsList.get(selectedItemPosition);
                 String[] parts = selectedItem.split(" - ");
-                if (parts.length >= 3) { // تحقق من وجود ID
-                    int itemId = Integer.parseInt(parts[0]); // ID هو الجزء الأول
+
+                if (parts.length >= 3) { // تأكد من وجود ID واسم الصنف والعدد
+                    int itemId = Integer.parseInt(parts[0]);
                     String currentClassName = parts[1];
                     int currentQuantity = Integer.parseInt(parts[2]);
 
@@ -92,14 +83,15 @@ public class MainActivity extends AppCompatActivity {
 
                     btnUpdate.setOnClickListener(innerV -> {
                         String newClassName = editClassName.getText().toString().trim();
-                        String newQuantity = editQuantity.getText().toString().trim();
+                        String newQuantityStr = editQuantity.getText().toString().trim();
 
-                        if (!newClassName.isEmpty() && !newQuantity.isEmpty()) {
+                        if (!newClassName.isEmpty() && !newQuantityStr.isEmpty()) {
                             try {
-                                updateItem(newClassName, newQuantity, itemId); // تحديد ID للسجل
+                                int newQuantity = Integer.parseInt(newQuantityStr);
+                                updateItem(newClassName, newQuantityStr, itemId); // تحديث السجل
                                 dialog.dismiss(); // إغلاق الحوار بعد التعديل
                             } catch (NumberFormatException e) {
-                                Toast.makeText(MainActivity.this, "حدث خطأ أثناء التعديل", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, "يرجى إدخال عدد صحيح", Toast.LENGTH_SHORT).show();
                             }
                         } else {
                             Toast.makeText(MainActivity.this, "يرجى إدخال جميع البيانات", Toast.LENGTH_SHORT).show();
@@ -128,28 +120,6 @@ public class MainActivity extends AppCompatActivity {
                     })
                     .setNegativeButton("لا", null)
                     .show();
-        });
-
-        // Long Click Listener for Deleting Items
-        listViewItems.setOnItemLongClickListener((parent, view, position, id) -> {
-            int itemId = (int) id;
-
-            // Show confirmation dialog before deletion
-            new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("تأكيد المسح")
-                    .setMessage("هل أنت متأكد من أنك تريد مسح هذا الصنف؟")
-                    .setPositiveButton("نعم", (dialog, which) -> {
-                        if (dbHelper.deleteItem(itemId)) {
-                            Toast.makeText(MainActivity.this, "تم المسح بنجاح", Toast.LENGTH_SHORT).show();
-                            loadItemsFromDatabase(); // Reload data after deletion
-                        } else {
-                            Toast.makeText(MainActivity.this, "فشل المسح", Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .setNegativeButton("لا", null)
-                    .show();
-
-            return true;
         });
     }
 
@@ -197,17 +167,17 @@ public class MainActivity extends AppCompatActivity {
                     String className = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_CLASS_NAME));
                     int quantity = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_QUANTITY));
 
-                    // حفظ ID مع اسم الصنف والعدد
+                    // إضافة عنصر بصيغة "ID - ClassName - Quantity"
                     itemsList.add(id + " - " + className + " - " + quantity);
                 } catch (IllegalArgumentException e) {
                     System.err.println("Error: Missing column in database");
                 }
             } while (cursor.moveToNext());
 
-            cursor.close(); // Always close the cursor after use
+            cursor.close(); // دائمًا إغلاق المؤشر بعد الاستخدام
         }
 
-        adapter.notifyDataSetChanged(); // Update ListView
+        adapter.notifyDataSetChanged(); // تحديث RecyclerView
     }
 
     /**
@@ -220,13 +190,11 @@ public class MainActivity extends AppCompatActivity {
         values.put(DatabaseHelper.COLUMN_QUANTITY, Integer.parseInt(quantity));
 
         long result = db.update(DatabaseHelper.TABLE_ITEMS, values, DatabaseHelper.COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
-        if (result != 0) { // تأكد من أن التعديل نجح
+        if (result != -1) {
             Toast.makeText(this, "تم التعديل بنجاح", Toast.LENGTH_SHORT).show();
             loadItemsFromDatabase(); // Reload data after update
         } else {
             Toast.makeText(this, "فشل التعديل", Toast.LENGTH_SHORT).show();
         }
     }
-
-
 }
