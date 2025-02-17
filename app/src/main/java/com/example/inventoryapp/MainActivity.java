@@ -6,72 +6,88 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.Toast;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText editTextClassName, editTextQuantity;
-    private Button buttonSave, buttonClearAll, buttonUpdate;
-    private ListView listViewItems;
+    private Button buttonClearAll, buttonUpdate;
+    private RecyclerView recyclerViewItems;
     private ArrayList<String> itemsList;
-    private ArrayAdapter<String> adapter;
+    private ItemAdapter adapter;
     private DatabaseHelper dbHelper;
+    private FloatingActionButton fabSave;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // تهيئة العناصر
+        // Initialize views
         editTextClassName = findViewById(R.id.editTextClassName);
         editTextQuantity = findViewById(R.id.editTextQuantity);
-        buttonSave = findViewById(R.id.buttonSave);
         buttonClearAll = findViewById(R.id.buttonClearAll);
         buttonUpdate = findViewById(R.id.buttonUpdate);
-        listViewItems = findViewById(R.id.listViewItems);
+        recyclerViewItems = findViewById(R.id.recyclerViewItems);
+        fabSave = findViewById(R.id.fabSave);
 
-        // تهيئة القائمة و Adapter
+        // Initialize RecyclerView
         itemsList = new ArrayList<>();
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, itemsList);
-        listViewItems.setAdapter(adapter);
-
-        // تهيئة قاعدة البيانات
         dbHelper = new DatabaseHelper(this);
+        adapter = new ItemAdapter(itemsList, dbHelper);
+        recyclerViewItems.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewItems.setAdapter(adapter);
 
-        // تحميل البيانات عند بدء التشغيل
+        // Load items from database
         loadItemsFromDatabase();
 
         // Save Button Listener
-        buttonSave.setOnClickListener(v -> saveItemToDatabase());
+        fabSave.setOnClickListener(v -> saveItemToDatabase());
+
+        // Clear All Button Listener
+        buttonClearAll.setOnClickListener(v -> {
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle(" مسح الكل")
+                    .setMessage("أنت متاكد يا تيحه أنك عايز تمسح كل حاجه ولا انت مصطبح")
+                    .setPositiveButton("Yes", (dialog, which) -> {
+                        dbHelper.clearAllItems();
+                        itemsList.clear();
+                        adapter.notifyDataSetChanged();
+                        Toast.makeText(MainActivity.this, "شغلانه خره مسحتلك ياعم كل حاجه", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("No", null)
+                    .show();
+        });
 
         // Update Button Listener
         buttonUpdate.setOnClickListener(v -> {
-            int selectedItemPosition = listViewItems.getCheckedItemPosition();
+            int selectedItemPosition = adapter.getSelectedItemPosition();
 
-            if (selectedItemPosition != ListView.INVALID_POSITION) { // تأكد من اختيار العنصر
+            if (selectedItemPosition != RecyclerView.NO_POSITION) {
                 String selectedItem = itemsList.get(selectedItemPosition);
                 String[] parts = selectedItem.split(" - ");
 
-                if (parts.length >= 3) { // تأكد من وجود ID واسم الصنف والعدد
+                if (parts.length >= 3) {
                     int itemId = Integer.parseInt(parts[0]);
                     String currentClassName = parts[1];
                     int currentQuantity = Integer.parseInt(parts[2]);
 
-                    // إنشاء حوار التعديل
+                    // Create update dialog
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    View dialogView = getLayoutInflater().inflate(R.layout.update_dialog, null);
+                    View dialogView = LayoutInflater.from(this).inflate(R.layout.update_dialog, null);
 
                     EditText editClassName = dialogView.findViewById(R.id.editTextUpdateClassName);
                     EditText editQuantity = dialogView.findViewById(R.id.editTextUpdateQuantity);
                     Button btnUpdateDialog = dialogView.findViewById(R.id.buttonUpdateDialog);
 
-                    // تعيين القيم الحالية
                     editClassName.setText(currentClassName);
                     editQuantity.setText(String.valueOf(currentQuantity));
 
@@ -85,44 +101,26 @@ public class MainActivity extends AppCompatActivity {
                         if (!newClassName.isEmpty() && !newQuantityStr.isEmpty()) {
                             try {
                                 int newQuantity = Integer.parseInt(newQuantityStr);
-                                updateItem(newClassName, newQuantityStr, itemId); // تحديث السجل
-                                dialog.dismiss(); // إغلاق الحوار بعد التعديل
+                                updateItem(newClassName, newQuantityStr, itemId);
+                                dialog.dismiss();
                             } catch (NumberFormatException e) {
-                                Toast.makeText(MainActivity.this, "يرجى إدخال عدد صحيح", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, "ياعم انت بتستلوح أكتب رقم ياعم ", Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            Toast.makeText(MainActivity.this, "يرجى إدخال جميع البيانات", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, " فوق كده الله يرضى عليك وأكتب كل البيانات", Toast.LENGTH_SHORT).show();
                         }
                     });
 
                     dialog.show();
                 } else {
-                    Toast.makeText(this, "خطأ في البيانات المخزنة", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Error in stored data", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                Toast.makeText(this, "اختر عنصرًا لتعديله", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Select an item to update", Toast.LENGTH_SHORT).show();
             }
-        });
-
-        // Clear All Button Listener
-        buttonClearAll.setOnClickListener(v -> {
-            new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("تأكيد المسح")
-                    .setMessage("هل أنت متأكد من أنك تريد مسح جميع الصنوف؟")
-                    .setPositiveButton("نعم", (dialog, which) -> {
-                        dbHelper.clearAllItems();
-                        itemsList.clear();
-                        adapter.notifyDataSetChanged(); // تحديث ListView
-                        Toast.makeText(MainActivity.this, "تم مسح جميع الصنوف", Toast.LENGTH_SHORT).show();
-                    })
-                    .setNegativeButton("لا", null)
-                    .show();
         });
     }
 
-    /**
-     * دالة لحفظ العنصر في قاعدة البيانات
-     */
     private void saveItemToDatabase() {
         String className = editTextClassName.getText().toString().trim();
         String quantityStr = editTextQuantity.getText().toString().trim();
@@ -133,26 +131,22 @@ public class MainActivity extends AppCompatActivity {
                 boolean isInserted = dbHelper.insertItem(className, quantityStr);
 
                 if (isInserted) {
-                    Toast.makeText(this, "تم الحفظ بنجاح", Toast.LENGTH_SHORT).show();
-                    loadItemsFromDatabase(); // إعادة تحميل البيانات
+                    Toast.makeText(this, " صبح صبح يا تيحه", Toast.LENGTH_SHORT).show();
+                    loadItemsFromDatabase();
                 } else {
-                    Toast.makeText(this, "فشل الحفظ", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "فوق كده لحالك مفيش حاجه أتسجلت", Toast.LENGTH_SHORT).show();
                 }
             } catch (NumberFormatException e) {
-                Toast.makeText(this, "يرجى إدخال عدد صحيح", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please enter a valid number", Toast.LENGTH_SHORT).show();
             }
         } else {
-            Toast.makeText(this, "يرجى إدخال جميع البيانات", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
         }
 
-        // مسح الحقول بعد الحفظ
         editTextClassName.setText("");
         editTextQuantity.setText("");
     }
 
-    /**
-     * دالة لتحميل العناصر من قاعدة البيانات
-     */
     private void loadItemsFromDatabase() {
         Cursor cursor = dbHelper.getAllItems();
         itemsList.clear();
@@ -164,22 +158,18 @@ public class MainActivity extends AppCompatActivity {
                     String className = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_CLASS_NAME));
                     int quantity = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_QUANTITY));
 
-                    // إضافة عنصر بصيغة "ID - ClassName - Quantity"
                     itemsList.add(id + " - " + className + " - " + quantity);
                 } catch (IllegalArgumentException e) {
                     System.err.println("Error: Missing column in database");
                 }
             } while (cursor.moveToNext());
 
-            cursor.close(); // إغلاق المؤشر بعد الاستخدام
+            cursor.close();
         }
 
-        adapter.notifyDataSetChanged(); // تحديث ListView
+        adapter.notifyDataSetChanged();
     }
 
-    /**
-     * دالة لتحديث العنصر في قاعدة البيانات
-     */
     private void updateItem(String className, String quantity, int id) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -188,10 +178,10 @@ public class MainActivity extends AppCompatActivity {
 
         long result = db.update(DatabaseHelper.TABLE_ITEMS, values, DatabaseHelper.COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
         if (result != 0) {
-            Toast.makeText(this, "تم التعديل بنجاح", Toast.LENGTH_SHORT).show();
-            loadItemsFromDatabase(); // إعادة تحميل البيانات
+            Toast.makeText(this, "حدثنا البيانات يا معاليك", Toast.LENGTH_SHORT).show();
+            loadItemsFromDatabase();
         } else {
-            Toast.makeText(this, "فشل التعديل", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, " متحدثش والله شوف كده انت نيلت ايه غلط", Toast.LENGTH_SHORT).show();
         }
     }
 }

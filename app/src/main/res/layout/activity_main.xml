@@ -1,110 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <!-- Card for Input Fields -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardInput"
+    <!-- EditText for Class Name -->
+    <EditText
+        android:id="@+id/editTextClassName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:hint="أسم الصنف"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:cardElevation="4dp"
-        app:cardCornerRadius="8dp"
-        android:layout_marginBottom="16dp">
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <!-- Class Name Input -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="اسم الصنف">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextClassName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Quantity Input -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="العدد">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextQuantity"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="number" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Save Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonSave"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="حفظ"
-                app:cornerRadius="8dp"
-                android:layout_marginTop="16dp" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Update and Clear All Buttons -->
-    <LinearLayout
-        android:id="@+id/linearLayoutButtons"
+    <!-- EditText for Quantity -->
+    <EditText
+        android:id="@+id/editTextQuantity"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/cardInput"
+        android:hint="العدد"
+        android:inputType="number"
+        app:layout_constraintTop_toBottomOf="@id/editTextClassName"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Save Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabSave"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="Save Item"
+        app:srcCompat="@android:drawable/ic_menu_save"
+        app:layout_constraintTop_toBottomOf="@id/editTextQuantity"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Clear All Button -->
+    <Button
+        android:id="@+id/buttonClearAll"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=" مسح كل البيانات "
+        android:textColor="@color/TextButtonColor"
+        app:layout_constraintTop_toBottomOf="@id/fabSave"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="16dp">
+        android:backgroundTint="@color/dark_on_primary"/>
 
-        <!-- Update Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonUpdate"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="تعديل"
-            app:cornerRadius="8dp"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/buttonClearAll"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+    <!-- Update Button -->
+    <Button
+        android:id="@+id/buttonUpdate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=" تحديث  "
+        android:textColor="@color/TextButtonColor"
+        app:layout_constraintTop_toBottomOf="@id/buttonClearAll"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:backgroundTint="@color/dark_primary"/>
 
-        <!-- Clear All Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonClearAll"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="مسح الكل"
-            app:cornerRadius="8dp"
-            android:layout_marginStart="8dp"
-            app:layout_constraintStart_toEndOf="@id/buttonUpdate"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-    </LinearLayout>
-
-    <!-- Items List (ListView) -->
-    <ListView
-        android:id="@+id/listViewItems"
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewItems"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/linearLayoutButtons"
+        android:textColor="@color/TextButtonColor"
+        app:layout_constraintTop_toBottomOf="@id/buttonUpdate"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
